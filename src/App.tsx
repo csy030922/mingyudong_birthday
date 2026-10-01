@@ -42,7 +42,7 @@ const INITIAL_COUPONS: Coupon[] = [
     id: 'coupon-3',
     title: '일일 전용 꿀심부름권',
     subTitle: 'HELPER VOUCHER',
-    description: '음료 배달, 소소한 심부름 등등 딱 하나 대신 해드립니다.',
+    description: '소소한 심부름 중 딱 하나 대신 해드려용',
     tag: 'SERVICE',
     barcode: '| |||| | || ||| ||',
     themeColor: 'bg-rose-500',
@@ -78,7 +78,7 @@ const SECRET_COUPON: Coupon = {
   id: 'coupon-secret',
   title: '오늘 저녁은 무조건 교촌이다! 🍗 ',
   subTitle: 'SECRET VOUCHER',
-  description: '교촌을 무조건 먹고 싶은 날에 사용해! (단, 민규동이 쏘기)',
+  description: '교촌을 무조건 먹고 싶은 날에 사용해!\n(단, 민규동이 쏘기)',
   tag: '🔑 HIDDEN SECRET 🔑',
   barcode: '||||||||||||||||||',
   themeColor: 'bg-pink-600',
@@ -111,12 +111,12 @@ export default function App() {
   const [gateError, setGateError] = useState<boolean>(false);
 
   const [coupons, setCoupons] = useState<Coupon[]>(() => {
-    const hasSecret = localStorage.getItem('bday_secret_unlocked') === 'true';
+    const hasSecret = localStorage.getItem('bday_secret_unlocked_v2') === 'true';
     return hasSecret ? [...INITIAL_COUPONS, SECRET_COUPON] : INITIAL_COUPONS;
   });
 
   const [usedCoupons, setUsedCoupons] = useState<{ [key: string]: string }>(() => {
-    const saved = localStorage.getItem('bday_ticket_coupons');
+    const saved = localStorage.getItem('bday_ticket_coupons_v2');
     return saved ? JSON.parse(saved) : {};
   });
 
@@ -133,7 +133,7 @@ export default function App() {
   const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem('bday_ticket_coupons', JSON.stringify(usedCoupons));
+    localStorage.setItem('bday_ticket_coupon_v2', JSON.stringify(usedCoupons));
   }, [usedCoupons]);
 
   const handleGateSubmit = (e: React.FormEvent) => {
@@ -150,14 +150,14 @@ export default function App() {
 
   // 흩어진 돋보기 클릭
   const handleEmojiClick = (index: number) => {
-    const isUnlocked = localStorage.getItem('bday_secret_unlocked') === 'true';
+    const isUnlocked = localStorage.getItem('bday_secret_unlocked_v2') === 'true';
     if (isUnlocked || clickedIndices.includes(index) || attemptsLeft <= 0) return;
 
     const newClicked = [...clickedIndices, index];
     setClickedIndices(newClicked);
 
     if (index === winningIndex) {
-      localStorage.setItem('bday_secret_unlocked', 'true');
+      localStorage.setItem('bday_secret_unlocked_v2', 'true');
       setCoupons((prev) => [...prev, SECRET_COUPON]);
       setShowSecretModal(true);
 
@@ -227,7 +227,7 @@ export default function App() {
     }, 800);
   };
 
-  const isSecretUnlocked = localStorage.getItem('bday_secret_unlocked') === 'true';
+  const isSecretUnlocked = localStorage.getItem('bday_secret_unlocked_v2') === 'true';
 
   return (
     <div className="min-h-screen bg-[#e0f2fe] flex justify-center items-center p-0 sm:p-4 font-sans select-none">
@@ -253,13 +253,13 @@ export default function App() {
                   setGateError(false);
                 }}
                 placeholder="오늘 기준으로 우리가 연애한 지 며칠째?"
-                className={`w-full text-center py-3 px-4 rounded-2xl border text-xs font-bold tracking-widest bg-white shadow-sm focus:outline-none transition ${
+                className={`w-full text-center py-3 px-4 rounded-2xl border text-base font-bold tracking-widest bg-white shadow-sm focus:outline-none transition ${
                   gateError ? 'border-rose-500 text-rose-600' : 'border-blue-200 text-gray-800'
                 }`}
               />
               {gateError && (
                 <p className="text-[11px] text-rose-500 font-bold flex items-center justify-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> 암호가 맞지 않습니다! (힌트: 생일)
+                  <AlertCircle className="w-3.5 h-3.5" /> 암호가 맞지 않습니다!
                 </p>
               )}
               <button type="submit" className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-xs shadow-md active:scale-95 transition">
@@ -290,6 +290,7 @@ export default function App() {
                 const isUsed = !!usedCoupons[coupon.id];
                 const isTearing = tearingId === coupon.id;
                 const usedDate = usedCoupons[coupon.id];
+                const isSelected = selectedCoupon?.id === coupon.id;
 
                 return (
                   <motion.div
@@ -297,64 +298,135 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.08 }}
-                    onClick={() => !isUsed && setSelectedCoupon(coupon)}
-                    className={`relative w-full flex items-stretch rounded-xl shadow-md overflow-hidden transition-all ${
-                      isUsed ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer hover:scale-[1.01]'
-                    }`}
+                    className="relative w-full"
                   >
-                    <div className={`w-16 ${coupon.themeColor} text-white flex flex-col justify-between items-center py-3 px-1 relative select-none`}>
-                      <span className="text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-lr] rotate-180">
-                        {coupon.subTitle}
-                      </span>
-                      <TicketIcon className="w-5 h-5 opacity-80" />
-                      <span className="text-[9px] font-mono opacity-80">2026</span>
-                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#f0f9ff] rounded-full z-10" />
-                      <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-[#f0f9ff] rounded-full z-10" />
+                    {/* 티켓 메인 카드 */}
+                    <div
+                      onClick={() => !isUsed && setSelectedCoupon(coupon)}
+                      className={`w-full flex items-stretch rounded-xl shadow-md overflow-hidden transition-all ${
+                        isUsed ? 'opacity-60 grayscale-[0.5]' : 'cursor-pointer hover:scale-[1.01]'
+                      }`}
+                    >
+                      <div className={`w-16 ${coupon.themeColor} text-white flex flex-col justify-between items-center py-3 px-1 relative select-none shrink-0`}>
+                        <span className="text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-lr] rotate-180">
+                          {coupon.subTitle}
+                        </span>
+                        <TicketIcon className="w-5 h-5 opacity-80" />
+                        <span className="text-[9px] font-mono opacity-80">2026</span>
+                        <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#f0f9ff] rounded-full z-10" />
+                        <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-[#f0f9ff] rounded-full z-10" />
+                      </div>
+
+                      <div className="w-[2px] bg-white border-l-2 border-dashed border-gray-300 relative z-10 shrink-0" />
+
+                      <motion.div
+                        animate={isTearing ? { x: 120, rotate: 12, opacity: 0 } : { x: 0, rotate: 0, opacity: 1 }}
+                        transition={{ duration: 0.7, ease: 'easeInOut' }}
+                        className="flex-1 bg-white p-3.5 flex flex-col justify-between relative border-y border-r border-gray-200 rounded-r-xl min-w-0"
+                      >
+                        <div>
+                          <div className="flex justify-between items-center mb-1 gap-1">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 shrink-0 ${coupon.textColor}`}>
+                              {coupon.tag}
+                            </span>
+                            <span className="text-[10px] font-mono tracking-tighter text-gray-400 truncate">
+                              {coupon.barcode}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-extrabold text-gray-800 leading-snug">{coupon.title}</h3>
+                          <p className="text-xs text-gray-500 mt-1 leading-snug">{coupon.description}</p>
+                        </div>
+
+                        {/* 줄바꿈 현상 완벽 방지 하단 레이아웃 */}
+                        <div className="mt-3 pt-2 border-t border-dashed border-gray-200 flex items-center justify-between gap-1 text-[10px] text-gray-400">
+                          <span className="flex items-center gap-1 font-mono text-gray-400 shrink-0">
+                            <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                            {coupon.expiryDate}
+                          </span>
+
+                          {isUsed ? (
+                            <span className="text-rose-500 font-bold flex items-center gap-0.5 font-mono text-[9px] shrink-0">
+                              <CheckCircle2 className="w-3 h-3 shrink-0" /> USED ({usedDate})
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold text-blue-600 underline underline-offset-2 shrink-0">
+                              티켓 사용하기 →
+                            </span>
+                          )}
+                        </div>
+
+                        {isUsed && (
+                          <div className="absolute right-2 top-2 border-2 border-rose-500 text-rose-500 font-black text-[10px] px-1.5 py-0.5 rounded rotate-[-15deg] opacity-80 pointer-events-none">
+                            COMPLETED
+                          </div>
+                        )}
+                      </motion.div>
                     </div>
 
-                    <div className="w-[2px] bg-white border-l-2 border-dashed border-gray-300 relative z-10" />
+                    {/* 선택한 티켓 카드 바로 위에 뜨는 오버레이 모달 */}
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="absolute inset-0 z-30 bg-white rounded-xl border-2 border-blue-400 shadow-xl p-3 flex flex-col justify-between"
+                        >
+                          <div className="flex justify-between items-center border-b border-gray-100 pb-1.5">
+                            <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs">
+                              <KeyRound className="w-4 h-4" />
+                              <span>티켓 사용 인증</span>
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-mono">{coupon.expiryDate}</span>
+                          </div>
 
-                    <motion.div
-                      animate={isTearing ? { x: 120, rotate: 12, opacity: 0 } : { x: 0, rotate: 0, opacity: 1 }}
-                      transition={{ duration: 0.7, ease: 'easeInOut' }}
-                      className="flex-1 bg-white p-4 flex flex-col justify-between relative border-y border-r border-gray-200 rounded-r-xl"
-                    >
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 ${coupon.textColor}`}>
-                            {coupon.tag}
-                          </span>
-                          <span className="text-[10px] font-mono tracking-tighter text-gray-400">
-                            {coupon.barcode}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-extrabold text-gray-800 leading-snug">{coupon.title}</h3>
-                        <p className="text-xs text-gray-500 mt-1 leading-snug">{coupon.description}</p>
-                      </div>
+                          <div className="my-1 text-center">
+                            <p className="text-xs font-bold text-gray-700 mb-1 flex items-center justify-center gap-1">
+                              <Lock className="w-3 h-3 text-blue-600" /> 서영 인증 비밀번호
+                            </p>
+                            <input
+                              type="password"
+                              maxLength={4}
+                              value={pinInput}
+                              onChange={(e) => {
+                                setPinInput(e.target.value);
+                                setPinError(false);
+                              }}
+                              placeholder="비밀번호 4자리"
+                              className={`w-full text-center py-2 px-3 rounded-lg border text-base tracking-widest font-bold focus:outline-none transition ${
+                                pinError ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-gray-200 bg-gray-50'
+                              }`}
+                            />
+                            {pinError && (
+                              <p className="text-[10px] text-rose-500 font-bold mt-1">
+                                비밀번호가 올바르지 않습니다!
+                              </p>
+                            )}
+                          </div>
 
-                      <div className="mt-3 pt-2 border-t border-dashed border-gray-200 flex justify-between items-center text-[10px] text-gray-400">
-                        <span className="flex items-center gap-1 font-mono text-gray-400">
-                          <Calendar className="w-3 h-3 text-gray-400" />
-                          {coupon.expiryDate}
-                        </span>
-
-                        {isUsed ? (
-                          <span className="text-rose-500 font-bold flex items-center gap-1 font-mono">
-                            <CheckCircle2 className="w-3 h-3" /> USED ({usedDate})
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-bold text-blue-600 underline underline-offset-2">
-                            티켓 사용하기 →
-                          </span>
-                        )}
-                      </div>
-
-                      {isUsed && (
-                        <div className="absolute right-3 top-3 border-2 border-rose-500 text-rose-500 font-black text-xs px-2 py-0.5 rounded rotate-[-15deg] opacity-80 pointer-events-none">
-                          COMPLETED
-                        </div>
+                          <div className="flex gap-2 pt-1 border-t border-gray-100">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCloseModal();
+                              }}
+                              className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-600 font-bold text-xs"
+                            >
+                              취소
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConfirmUse(coupon);
+                              }}
+                              className={`flex-1 py-2 rounded-lg ${coupon.themeColor} text-white font-bold text-xs shadow-sm`}
+                            >
+                              티켓 사용 🎟️
+                            </button>
+                          </div>
+                        </motion.div>
                       )}
-                    </motion.div>
+                    </AnimatePresence>
                   </motion.div>
                 );
               })}
@@ -370,7 +442,7 @@ export default function App() {
               )}
             </footer>
 
-            {/* 🌟 페이지 전체에 숨겨진 10개의 돋보기 이모지들 (Absolute Layer) */}
+            {/* 🌟 숨겨진 10개 돋보기 이모지 */}
             {!isSecretUnlocked &&
               EMOJI_POSITIONS.map((pos, i) => {
                 const isClicked = clickedIndices.includes(i);
@@ -396,73 +468,6 @@ export default function App() {
               })}
           </>
         )}
-
-        {/* 비밀번호 입력 모달 */}
-        <AnimatePresence>
-          {selectedCoupon && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleCloseModal}
-              className="absolute inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full bg-white rounded-2xl p-6 text-center border-2 border-blue-200 shadow-2xl relative"
-              >
-                <div className="inline-block p-3 rounded-full bg-blue-50 text-blue-600 mb-2">
-                  <KeyRound className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-black text-gray-800 mb-1">{selectedCoupon.title}</h3>
-                <p className="text-xs text-gray-500 mb-4">{selectedCoupon.description}</p>
-
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center justify-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-blue-600" />
-                    <span>서영 인증 비밀번호 입력</span>
-                  </label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    value={pinInput}
-                    onChange={(e) => {
-                      setPinInput(e.target.value);
-                      setPinError(false);
-                    }}
-                    placeholder="비밀번호 4자리"
-                    className={`w-full text-center py-2.5 px-3 rounded-xl border text-sm tracking-widest font-bold focus:outline-none transition ${
-                      pinError ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-gray-300 bg-gray-50'
-                    }`}
-                  />
-                  {pinError && (
-                    <p className="text-[11px] text-rose-500 font-bold mt-1.5 flex items-center justify-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> 비밀번호가 올바르지 않습니다!
-                    </p>
-                  )}
-                </div>
-
-                <div className="bg-blue-50/80 border border-blue-100 rounded-lg p-2.5 mb-5 text-center">
-                  <p className="text-[11px] text-blue-800 font-medium leading-tight">
-                    유효기간: <span className="font-bold">{selectedCoupon.expiryDate}</span>
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <button onClick={handleCloseModal} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold text-xs">
-                    취소
-                  </button>
-                  <button onClick={() => handleConfirmUse(selectedCoupon)} className={`flex-1 py-3 rounded-xl ${selectedCoupon.themeColor} text-white font-bold text-xs shadow-md`}>
-                    티켓 사용하기 🎟️
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* 보물찾기 성공 모달 */}
         <AnimatePresence>
